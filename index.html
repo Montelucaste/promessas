@@ -281,7 +281,7 @@
             <button class="btn btn-primary" id="newVerseBtn">
                 <span>✝</span> Nova Mensagem
             </button>
-            <button class="btn btn-outline" id="shareBtn" onclick="sendToWhatsApp()">
+            <button class="btn btn-outline" id="shareBtn">
                 <span>📲</span> Compartilhar
             </button>
         </div>
@@ -290,7 +290,7 @@
         <div class="whatsapp-area">
             <span>📞</span>
             <input type="tel" id="phoneNumber" placeholder="DDD + Número (ex: 5511999999999)" value="">
-            <button class="btn-wsp-send" onclick="sendToWhatsApp()">
+            <button class="btn-wsp-send" id="sendBtn">
                 <span>📨</span> Enviar
             </button>
         </div>
@@ -314,7 +314,7 @@
 
     <!-- ==================== SCRIPTS ==================== -->
     <script>
-    // --- ARRAY COMPLETO DE VERSÍCULOS (do seu código original) ---
+    // --- ARRAY COMPLETO DE VERSÍCULOS (DO SEU CÓDIGO ORIGINAL) ---
     var frase = [];
     
     // COLE AQUI TODOS OS VERSÍCULOS DO SEU ARQUIVO ORIGINAL
@@ -3464,79 +3464,90 @@ frase[257] = "Não é o que entra pela boca que faz alguém ficar impuro. Ao con
 
     // FIM - Aqui termina a lista de versículos
     
-    // Garantir que pelo menos tenha algum conteúdo
-    if (frase.length === 0 || Object.keys(frase).length === 0) {
-        frase[0] = "O Senhor é o meu pastor; nada me faltará. (Sl 23:1)";
-    }
     </script>
 
-<script>
-(function() {
-    // --- AQUI VOCÊ DEVE MANTER O ARRAY COMPLETO DE VERSÍCULOS ---
-    var frase = [];
-    // (cole aqui seu array existente, de frase[0] até frase[3141])
-    
-    // Converter para array normal
-    const verseList = [];
-    for (let key in frase) {
-        if (frase.hasOwnProperty(key)) {
-            verseList.push(frase[key]);
+    <script>
+    // --- LÓGICA PRINCIPAL (UMA ÚNICA VEZ, SEM DUPLICAR O ARRAY) ---
+    (function() {
+        // Elementos do DOM
+        const verseDisplay = document.getElementById('verseDisplay');
+        const newVerseBtn = document.getElementById('newVerseBtn');
+        const phoneInput = document.getElementById('phoneNumber');
+        const shareBtn = document.getElementById('shareBtn');
+        const sendBtn = document.getElementById('sendBtn');
+
+        // Converter o array para uma lista utilizável
+        const verseList = [];
+        for (let key in frase) {
+            if (frase.hasOwnProperty(key)) {
+                verseList.push(frase[key]);
+            }
         }
-    }
 
-    // Elementos do DOM
-    const verseDisplay = document.getElementById('verseDisplay');
-    const newVerseBtn = document.getElementById('newVerseBtn');
-    const phoneInput = document.getElementById('phoneNumber');
-    const shareBtn = document.getElementById('shareBtn');
-
-    let currentIndex = Math.floor(Math.random() * verseList.length);
-    
-    function updateVerse(index) {
-        if (verseList[index]) {
-            verseDisplay.innerText = verseList[index];
+        // Verificar se tem versículos
+        if (verseList.length === 0) {
+            verseList.push("O Senhor é o meu pastor; nada me faltará. (Sl 23:1)");
         }
-    }
-    
-    updateVerse(currentIndex);
 
-    // Botão Nova Mensagem
-    newVerseBtn.addEventListener('click', function() {
-        let newIndex;
-        do {
-            newIndex = Math.floor(Math.random() * verseList.length);
-        } while (verseList.length > 1 && newIndex === currentIndex);
-        currentIndex = newIndex;
-        updateVerse(currentIndex);
-    });
-
-    // BOTÃO COMPARTILHAR (agora abre WhatsApp sem pedir número)
-    shareBtn.addEventListener('click', function() {
-        const verseText = verseList[currentIndex];
-        const texto = encodeURIComponent(verseText + ' - Local Sagrado');
+        // Índice atual
+        let currentIndex = Math.floor(Math.random() * verseList.length);
         
-        // Abre WhatsApp Web com opção de escolher contato
-        window.open(`https://web.whatsapp.com/send?text=${texto}`, '_blank');
-    });
-
-    // BOTÃO ENVIAR (continua igual, com número)
-    window.sendToWhatsApp = function() {
-        let phone = phoneInput.value.trim().replace(/\D/g, '');
-        if (phone === '') {
-            alert('Por favor, digite o número do WhatsApp com DDD (ex: 5511999999999).');
-            return;
+        // Função para atualizar o versículo
+        function updateVerse(index) {
+            if (verseList[index]) {
+                verseDisplay.innerText = verseList[index];
+            }
         }
-        const verseText = verseList[currentIndex];
-        const texto = encodeURIComponent(verseText + ' - Local Sagrado');
-        const url = `https://wa.me/${phone}?text=${texto}`;
-        window.open(url, '_blank');
-    };
-})();
-</script>
+        
+        // Inicializa
+        updateVerse(currentIndex);
+
+        // --- BOTÃO NOVA MENSAGEM (CORRIGIDO) ---
+        newVerseBtn.addEventListener('click', function() {
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * verseList.length);
+            } while (verseList.length > 1 && newIndex === currentIndex);
+            currentIndex = newIndex;
+            updateVerse(currentIndex);
+            console.log('Novo versículo carregado'); // Para debug
+        });
+
+        // --- BOTÃO COMPARTILHAR (abre WhatsApp sem número) ---
+        shareBtn.addEventListener('click', function() {
+            const verseText = verseList[currentIndex];
+            const texto = encodeURIComponent(verseText + ' - Local Sagrado');
+            
+            // Detecta se é celular ou PC para abrir app ou web
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            if (isMobile) {
+                window.open(`whatsapp://send?text=${texto}`, '_blank');
+            } else {
+                window.open(`https://web.whatsapp.com/send?text=${texto}`, '_blank');
+            }
+        });
+
+        // --- BOTÃO ENVIAR (com número) ---
+        function sendToWhatsApp() {
+            let phone = phoneInput.value.trim().replace(/\D/g, '');
+            if (phone === '') {
+                alert('Por favor, digite o número do WhatsApp com DDD (ex: 5511999999999).');
+                return;
+            }
+            const verseText = verseList[currentIndex];
+            const texto = encodeURIComponent(verseText + ' - Local Sagrado');
+            const url = `https://wa.me/${phone}?text=${texto}`;
+            window.open(url, '_blank');
+        }
+
+        // Associar evento ao botão enviar
+        sendBtn.addEventListener('click', sendToWhatsApp);
+    })();
+    </script>
 
     <!-- ==================== FOGOS DE ARTIFÍCIO ==================== -->
     <script>
-    // Fireworks - código original adaptado
+    // Fireworks - código original (mantido igual)
     if ((document.getElementById) && window.addEventListener || window.attachEvent) {
         (function() {
             var showerCol = new Array('#000000', '#ff0000', '#000000', '#00ff00', '#ff00ff', '#ffffff', '#ffa500', '#000000', '#fff000');
@@ -3563,14 +3574,12 @@ frase[257] = "Não é o que entra pela boca que faz alguém ficar impuro. Ao con
             var n = 14;
             var idx = 1;
 
-            // Encontra um índice livre
             for (i = 0; i < n; i++) {
                 if (document.getElementById(idx + i)) {
                     idx = (idx += (n));
                 }
             }
 
-            // Cria os divs dos fogos
             var placeholder = document.getElementById('fireworksPlaceholder');
             for (i = 0; i < n; i++) {
                 var div = document.createElement('div');
@@ -3583,7 +3592,7 @@ frase[257] = "Não é o que entra pela boca que faz alguém ficar impuro. Ao con
                 div.style.fontSize = '1px';
                 div.style.backgroundColor = launchColour;
                 div.style.zIndex = '9999';
-                document.body.appendChild(div); // Adiciona ao body para ficar sobre tudo
+                document.body.appendChild(div);
             }
 
             if (domWw) r = window;
